@@ -1,0 +1,22 @@
+### Сценарий 1. Задачу выполняет одна реплика. Подробно: docs/scenarios/01-one-replica.md
+### Нужны две реплики: mvn spring-boot:run и во втором терминале
+### mvn spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
+### Выгрузка длится 5 секунд, lockAtLeastFor — 10 секунд: шаг 3 запустить, пока идёт шаг 2.
+
+### 1. Сброс: журнал запусков очищен, все блокировки освобождены (строки shedlock остаются)
+POST http://localhost:8080/lab/reset
+
+### 2. Выгрузка на 8080: {"executed":true} — блокировку взяла она
+POST http://localhost:8080/lab/jobs/catalog-export
+
+### 3. Пока идёт шаг 2 — выгрузка на 8081: {"executed":false}, блокировку держит 8080
+POST http://localhost:8081/lab/jobs/catalog-export
+
+### 4. Строка блокировки: locked_by — replica-8080, lock_until = locked_at + 10 с (lockAtLeastFor)
+GET http://localhost:8080/lab/locks
+
+### 5. Журнал запусков: один запуск, replica-8080
+GET http://localhost:8080/lab/runs
+
+### 6. Расписание: каждую минуту обе реплики запускают выгрузку, в журнале — по одной строке в минуту
+GET http://localhost:8081/lab/runs

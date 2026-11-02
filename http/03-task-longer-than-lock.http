@@ -1,0 +1,24 @@
+### Сценарий 3. Задача дольше lockAtMostFor. Подробно: docs/scenarios/03-task-longer-than-lock.md
+### Две реплики, как в сценарии 1. Отчёт: lockAtMostFor 5 с, работа 10 с;
+### с продлением: lockAtMostFor 30 с, работа 40 с.
+
+### 1. Сброс
+POST http://localhost:8080/lab/reset
+
+### 2. Отчёт на 8080 (10 секунд)
+POST http://localhost:8080/lab/jobs/long-report
+
+### 3. Через 6 секунд после шага 2 — отчёт на 8081: {"executed":true}, блокировка истекла
+POST http://localhost:8081/lab/jobs/long-report
+
+### 4. Журнал: два запуска, интервалы пересекаются
+GET http://localhost:8080/lab/runs
+
+### 5. С продлением: отчёт на 8080 (40 секунд)
+POST http://localhost:8080/lab/jobs/long-report-keep-alive
+
+### 6. Через 35 секунд после шага 5 — на 8081: {"executed":false}, блокировку продлили
+POST http://localhost:8081/lab/jobs/long-report-keep-alive
+
+### 7. lock_until сдвинулся вперёд, locked_at прежний
+GET http://localhost:8080/lab/locks

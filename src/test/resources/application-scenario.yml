@@ -1,0 +1,22 @@
+# Сроки для тестов: короткие, чтобы истечение блокировок ждать секунды, а не минуты.
+# Профиль scenario включают и тестовый контекст (реплика A), и вторая реплика, которую запускает тест.
+spring:
+  docker:
+    compose:
+      enabled: false
+
+catalog-export:
+  cron: "-"
+  lock-at-most-for: 6s
+  lock-at-least-for: 3s
+  work-duration: 1s
+
+long-report:
+  cron: "-"
+  lock-at-most-for: 2s
+  work-duration: 4s
+  keep-alive-lock-at-most-for: 30s
+  keep-alive-work-duration: 35s
+
+reactive-export:
+  work-duration: 1s

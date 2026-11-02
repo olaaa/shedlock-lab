@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: shedlock-lab
+  sql:
+    init:
+      mode: always
+
+# Имя реплики пишется в колонку locked_by таблицы shedlock и в журнал запусков.
+lab:
+  replica-name: replica-${server.port:8080}
+
+# Сценарии 1 и 2: выгрузка каталога партнёру — раз в минуту на каждой реплике, выполняет одна.
+catalog-export:
+  cron: "0 * * * * *"
+  lock-at-most-for: 1m
+  lock-at-least-for: 10s
+  work-duration: 5s
+
+# Сценарий 3: долгий отчёт. По расписанию не запускается ("-"), только вручную: POST /lab/jobs/....
+long-report:
+  cron: "-"
+  lock-at-most-for: 5s
+  work-duration: 10s
+  keep-alive-lock-at-most-for: 30s
+  keep-alive-work-duration: 40s
+
+# Ловушка сценария 1: тот же экспорт, но метод возвращает Mono.
+reactive-export:
+  work-duration: 5s
+
+logging:
+  level:
+    net.javacrumbs.shedlock: DEBUG

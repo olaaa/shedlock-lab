@@ -1,0 +1,27 @@
+### Сценарий 2. Держатель блокировки упал. Подробно: docs/scenarios/02-holder-crash.md
+### Две реплики, как в сценарии 1. «Упасть» по-настоящему: остановить реплику 8080 (Ctrl+C или kill -9)
+### во время выгрузки — выгрузка длится 5 секунд, lockAtMostFor — 1 минута.
+
+### 1. Сброс
+POST http://localhost:8081/lab/reset
+
+### 2. Выгрузка на 8080 — и сразу kill -9 процесса реплики 8080, пока она работает
+POST http://localhost:8080/lab/jobs/catalog-export
+
+### 3. На 8081: {"executed":false} — строка блокировки осталась за replica-8080
+POST http://localhost:8081/lab/jobs/catalog-export
+
+### 4. lock_until = locked_at + 1 минута: столько реплика 8081 будет пропускать запуски
+GET http://localhost:8081/lab/locks
+
+### 5. Через минуту после шага 2: {"executed":true}
+POST http://localhost:8081/lab/jobs/catalog-export
+
+### 6. Задача упала с исключением, а не процесс: блокировка снимается сразу (с учётом lockAtLeastFor)
+POST http://localhost:8081/lab/faults/fail-next-run
+
+###
+POST http://localhost:8081/lab/jobs/catalog-export
+
+###
+GET http://localhost:8081/lab/locks
