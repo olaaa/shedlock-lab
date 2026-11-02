@@ -1,16 +1,16 @@
-package io.github.olaaa.shedlocklab.web;
+package io.github.olaaa.shedlocklab.controller;
 
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.github.olaaa.shedlocklab.config.LabProperties;
 import io.github.olaaa.shedlocklab.job.CatalogExportJob;
-import io.github.olaaa.shedlocklab.job.JobFaults;
-import io.github.olaaa.shedlocklab.job.JobRun;
-import io.github.olaaa.shedlocklab.job.JobRunLog;
-import io.github.olaaa.shedlocklab.job.LockRow;
-import io.github.olaaa.shedlocklab.job.LockTable;
 import io.github.olaaa.shedlocklab.job.LongReportJob;
+import io.github.olaaa.shedlocklab.model.JobRun;
+import io.github.olaaa.shedlocklab.model.LockRow;
+import io.github.olaaa.shedlocklab.repository.JobRunRepository;
+import io.github.olaaa.shedlocklab.repository.LockRepository;
+import io.github.olaaa.shedlocklab.service.JobFaults;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 /*
- * Ручки для ручной проверки. Задачи блокирующие (см. JobRunner), а поток обработки запроса в WebFlux
+ * Ручки для ручной проверки. Задачи блокирующие (см. JobExecutionService), а поток обработки запроса в WebFlux
  * блокировать нельзя, поэтому запуск уходит на boundedElastic.
  */
 @RestController
@@ -29,17 +29,17 @@ public class LabController {
 
     private final CatalogExportJob catalogExportJob;
     private final LongReportJob longReportJob;
-    private final JobRunLog jobRunLog;
-    private final LockTable lockTable;
+    private final JobRunRepository jobRunRepository;
+    private final LockRepository lockRepository;
     private final JobFaults jobFaults;
     private final String replicaName;
 
-    public LabController(CatalogExportJob catalogExportJob, LongReportJob longReportJob, JobRunLog jobRunLog,
-                         LockTable lockTable, JobFaults jobFaults, LabProperties labProperties) {
+    public LabController(CatalogExportJob catalogExportJob, LongReportJob longReportJob, JobRunRepository jobRunRepository,
+                         LockRepository lockRepository, JobFaults jobFaults, LabProperties labProperties) {
         this.catalogExportJob = catalogExportJob;
         this.longReportJob = longReportJob;
-        this.jobRunLog = jobRunLog;
-        this.lockTable = lockTable;
+        this.jobRunRepository = jobRunRepository;
+        this.lockRepository = lockRepository;
         this.jobFaults = jobFaults;
         this.replicaName = labProperties.replicaName();
     }
@@ -61,12 +61,12 @@ public class LabController {
 
     @GetMapping("/runs")
     public Flux<JobRun> runs() {
-        return jobRunLog.runs();
+        return jobRunRepository.runs();
     }
 
     @GetMapping("/locks")
     public Flux<LockRow> locks() {
-        return lockTable.rows();
+        return lockRepository.rows();
     }
 
     @PostMapping("/faults/fail-next-run")
@@ -78,7 +78,7 @@ public class LabController {
     @PostMapping("/reset")
     public Mono<ResetResult> reset() {
         jobFaults.reset();
-        return jobRunLog.clear().then(lockTable.releaseAll())
+        return jobRunRepository.clear().then(lockRepository.releaseAll())
                 .thenReturn(new ResetResult(replicaName, true));
     }
 

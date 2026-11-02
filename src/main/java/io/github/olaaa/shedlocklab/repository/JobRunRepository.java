@@ -1,19 +1,20 @@
-package io.github.olaaa.shedlocklab.job;
+package io.github.olaaa.shedlocklab.repository;
 
 import java.time.Instant;
 
+import io.github.olaaa.shedlocklab.model.JobRun;
 import org.springframework.r2dbc.core.DatabaseClient;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /* Журнал запусков в таблице job_run. Время — clock_timestamp() базы, тех же часов, что у блокировок. */
-@Component
-public class JobRunLog {
+@Repository
+public class JobRunRepository {
 
     private final DatabaseClient databaseClient;
 
-    public JobRunLog(DatabaseClient databaseClient) {
+    public JobRunRepository(DatabaseClient databaseClient) {
         this.databaseClient = databaseClient;
     }
 

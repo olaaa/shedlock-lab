@@ -1,11 +1,11 @@
-package io.github.olaaa.shedlocklab.job;
+package io.github.olaaa.shedlocklab.service;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /* Сбой для опыта: следующий запуск задачи на этой реплике упадёт с исключением (сценарий 2). */
-@Component
+@Service
 public class JobFaults {
 
     private final AtomicBoolean failNextRun = new AtomicBoolean();

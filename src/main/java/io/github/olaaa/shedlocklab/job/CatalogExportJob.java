@@ -3,6 +3,7 @@ package io.github.olaaa.shedlocklab.job;
 import java.util.Optional;
 
 import io.github.olaaa.shedlocklab.config.JobProperties;
+import io.github.olaaa.shedlocklab.service.JobExecutionService;
 import net.javacrumbs.shedlock.core.LockAssert;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,11 +21,11 @@ public class CatalogExportJob {
 
     public static final String LOCK_NAME = "catalog-export";
 
-    private final JobRunner jobRunner;
+    private final JobExecutionService jobExecutionService;
     private final JobProperties.CatalogExport properties;
 
-    public CatalogExportJob(JobRunner jobRunner, JobProperties.CatalogExport properties) {
-        this.jobRunner = jobRunner;
+    public CatalogExportJob(JobExecutionService jobExecutionService, JobProperties.CatalogExport properties) {
+        this.jobExecutionService = jobExecutionService;
         this.properties = properties;
     }
 
@@ -35,6 +36,6 @@ public class CatalogExportJob {
     public Optional<Long> export() {
         /* Бросит исключение, если метод вызван не под блокировкой: прокси не сработал, аннотацию забыли. */
         LockAssert.assertLocked();
-        return Optional.of(jobRunner.run(LOCK_NAME, properties.workDuration()));
+        return Optional.of(jobExecutionService.run(LOCK_NAME, properties.workDuration()));
     }
 }

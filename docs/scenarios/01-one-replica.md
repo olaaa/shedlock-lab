@@ -1,7 +1,7 @@
 # Сценарий 1. Задачу по расписанию выполняет одна реплика
 
 Тест: `src/test/java/io/github/olaaa/shedlocklab/scenario/Scenario1OneReplicaTest.java`.
-Задача: `CatalogExportJob` — выгрузка каталога партнёру, блокировка `catalog-export`. Провайдер блокировок: `LockProviderConfiguration` (`R2dbcLockProvider`, таблица `shedlock`). Журнал запусков: `JobRunLog` (таблица `job_run`). Настройки в `application.yml`: расписание — каждую минуту, `lock-at-most-for` = 1 минута, `lock-at-least-for` = 10 секунд, работа — 5 секунд. В тестах (`application-scenario.yml`): 6 секунд, 3 секунды и 1 секунда, расписание выключено.
+Задача: `CatalogExportJob` — выгрузка каталога партнёру, блокировка `catalog-export`. Провайдер блокировок: `LockProviderConfiguration` (`R2dbcLockProvider`, таблица `shedlock`). Журнал запусков: `JobRunRepository` (таблица `job_run`). Настройки в `application.yml`: расписание — каждую минуту, `lock-at-most-for` = 1 минута, `lock-at-least-for` = 10 секунд, работа — 5 секунд. В тестах (`application-scenario.yml`): 6 секунд, 3 секунды и 1 секунда, расписание выключено.
 Ручная проверка: `http/01-one-replica.http` на двух репликах.
 
 Коротко:
@@ -144,7 +144,7 @@ public Mono<Long> export() {
 
 С `@Scheduled` ещё хуже. Документация Spring Framework: для реактивного метода «Spring один раз получает `Publisher` аннотированного метода и планирует `Runnable`, который подписывается на этот `Publisher`» по расписанию. То есть метод — а с ним и прокси ShedLock — вызывается один раз, при создании бина, а каждое срабатывание расписания подписывается на уже полученный `Publisher`, мимо блокировки. В лаборатории `@Scheduled` с `@SchedulerLock` на таком методе не дал подняться контексту: «Cannot obtain a Publisher-convertible value from the @Scheduled reactive method». Почему вызов при старте не вернул `Publisher`, по логу не видно, — но и успешный вызов защищал бы только этот первый раз.
 
-Вывод: метод под `@SchedulerLock` делает работу сам и возвращает управление, когда работа закончена. Здесь работа — `block()` внутри `JobRunner`: метод выполняется в потоке планировщика, блокировать его можно. Если запуск идёт из обработчика WebFlux, его уносят с потока обработки запросов (`LabController` — `subscribeOn(Schedulers.boundedElastic())`).
+Вывод: метод под `@SchedulerLock` делает работу сам и возвращает управление, когда работа закончена. Здесь работа — `block()` внутри `JobExecutionService`: метод выполняется в потоке планировщика, блокировать его можно. Если запуск идёт из обработчика WebFlux, его уносят с потока обработки запросов (`LabController` — `subscribeOn(Schedulers.boundedElastic())`).
 
 ## Попробовать вручную
 

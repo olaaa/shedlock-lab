@@ -1,4 +1,4 @@
-package io.github.olaaa.shedlocklab.job;
+package io.github.olaaa.shedlocklab.model;
 
 import java.time.Instant;
 

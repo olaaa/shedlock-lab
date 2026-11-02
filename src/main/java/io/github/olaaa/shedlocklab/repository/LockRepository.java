@@ -1,9 +1,10 @@
-package io.github.olaaa.shedlocklab.job;
+package io.github.olaaa.shedlocklab.repository;
 
 import java.time.Instant;
 
+import io.github.olaaa.shedlocklab.model.LockRow;
 import org.springframework.r2dbc.core.DatabaseClient;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -11,12 +12,12 @@ import reactor.core.publisher.Mono;
  * Чтение таблицы shedlock — чтобы показать, что в ней лежит. Сам ShedLock в неё пишет без нас.
  * Колонки — TIMESTAMP без зоны с временем UTC, поэтому AT TIME ZONE 'UTC' превращает их в момент времени.
  */
-@Component
-public class LockTable {
+@Repository
+public class LockRepository {
 
     private final DatabaseClient databaseClient;
 
-    public LockTable(DatabaseClient databaseClient) {
+    public LockRepository(DatabaseClient databaseClient) {
         this.databaseClient = databaseClient;
     }
 

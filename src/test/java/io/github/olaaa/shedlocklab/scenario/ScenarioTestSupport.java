@@ -3,18 +3,18 @@ package io.github.olaaa.shedlocklab.scenario;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.github.olaaa.shedlocklab.ShedlockLabApplication;
 import io.github.olaaa.shedlocklab.TestcontainersConfiguration;
-import io.github.olaaa.shedlocklab.job.JobFaults;
-import io.github.olaaa.shedlocklab.job.JobRun;
-import io.github.olaaa.shedlocklab.job.JobRunLog;
-import io.github.olaaa.shedlocklab.job.LockRow;
-import io.github.olaaa.shedlocklab.job.LockTable;
+import io.github.olaaa.shedlocklab.model.JobRun;
+import io.github.olaaa.shedlocklab.model.LockRow;
+import io.github.olaaa.shedlocklab.repository.JobRunRepository;
+import io.github.olaaa.shedlocklab.repository.LockRepository;
+import io.github.olaaa.shedlocklab.service.JobFaults;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,10 +39,10 @@ abstract class ScenarioTestSupport {
     PostgreSQLContainer postgresContainer;
 
     @Autowired
-    JobRunLog jobRunLog;
+    JobRunRepository jobRunRepository;
 
     @Autowired
-    LockTable lockTable;
+    LockRepository lockRepository;
 
     @Autowired
     JobFaults faultsOfReplicaA;
@@ -53,7 +53,7 @@ abstract class ScenarioTestSupport {
     @BeforeEach
     void cleanDatabase() {
         faultsOfReplicaA.reset();
-        jobRunLog.clear().then(lockTable.releaseAll()).block();
+        jobRunRepository.clear().then(lockRepository.releaseAll()).block();
     }
 
     @AfterEach
@@ -90,11 +90,11 @@ abstract class ScenarioTestSupport {
     }
 
     List<JobRun> runs() {
-        return jobRunLog.runs().collectList().block();
+        return jobRunRepository.runs().collectList().block();
     }
 
     LockRow lock(String name) {
-        return lockTable.find(name).block();
+        return lockRepository.find(name).block();
     }
 
     /* Сколько пар запусков шли одновременно: начало одного раньше конца другого. */

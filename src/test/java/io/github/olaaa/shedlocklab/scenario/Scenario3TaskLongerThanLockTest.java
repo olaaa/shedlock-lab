@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import io.github.olaaa.shedlocklab.job.JobRun;
-import io.github.olaaa.shedlocklab.job.LockRow;
 import io.github.olaaa.shedlocklab.job.LongReportJob;
+import io.github.olaaa.shedlocklab.model.JobRun;
+import io.github.olaaa.shedlocklab.model.LockRow;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

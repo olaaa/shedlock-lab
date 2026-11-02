@@ -1,6 +1,7 @@
 package io.github.olaaa.shedlocklab.job;
 
 import io.github.olaaa.shedlocklab.config.JobProperties;
+import io.github.olaaa.shedlocklab.service.JobExecutionService;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -22,16 +23,16 @@ public class ReactiveExportJob {
 
     public static final String LOCK_NAME = "reactive-export";
 
-    private final JobRunner jobRunner;
+    private final JobExecutionService jobExecutionService;
     private final JobProperties.ReactiveExport properties;
 
-    public ReactiveExportJob(JobRunner jobRunner, JobProperties.ReactiveExport properties) {
-        this.jobRunner = jobRunner;
+    public ReactiveExportJob(JobExecutionService jobExecutionService, JobProperties.ReactiveExport properties) {
+        this.jobExecutionService = jobExecutionService;
         this.properties = properties;
     }
 
     @SchedulerLock(name = LOCK_NAME, lockAtMostFor = "1m")
     public Mono<Long> export() {
-        return jobRunner.runReactive(LOCK_NAME, properties.workDuration());
+        return jobExecutionService.runReactive(LOCK_NAME, properties.workDuration());
     }
 }

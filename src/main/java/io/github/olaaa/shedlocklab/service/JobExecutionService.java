@@ -1,9 +1,10 @@
-package io.github.olaaa.shedlocklab.job;
+package io.github.olaaa.shedlocklab.service;
 
 import java.time.Duration;
 
 import io.github.olaaa.shedlocklab.config.LabProperties;
-import org.springframework.stereotype.Component;
+import io.github.olaaa.shedlocklab.repository.JobRunRepository;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 /*
@@ -11,21 +12,21 @@ import reactor.core.publisher.Mono;
  * Работа блокирующая и выполняется в потоке вызова: ShedLock держит блокировку, пока метод
  * с @SchedulerLock не вернул управление, — значит, вся работа должна закончиться внутри метода.
  */
-@Component
-public class JobRunner {
+@Service
+public class JobExecutionService {
 
-    private final JobRunLog jobRunLog;
+    private final JobRunRepository jobRunRepository;
     private final JobFaults jobFaults;
     private final String replicaName;
 
-    public JobRunner(JobRunLog jobRunLog, JobFaults jobFaults, LabProperties labProperties) {
-        this.jobRunLog = jobRunLog;
+    public JobExecutionService(JobRunRepository jobRunRepository, JobFaults jobFaults, LabProperties labProperties) {
+        this.jobRunRepository = jobRunRepository;
         this.jobFaults = jobFaults;
         this.replicaName = labProperties.replicaName();
     }
 
     public long run(String job, Duration workDuration) {
-        long runId = jobRunLog.start(job, replicaName).blockOptional().orElseThrow();
+        long runId = jobRunRepository.start(job, replicaName).blockOptional().orElseThrow();
         try {
             Mono.delay(workDuration).block();
             if (jobFaults.takeFailure()) {
@@ -33,15 +34,15 @@ public class JobRunner {
             }
             return runId;
         } finally {
-            jobRunLog.finish(runId).block();
+            jobRunRepository.finish(runId).block();
         }
     }
 
     /* То же, но реактивно: ничего не делает, пока на результат не подписались. */
     public Mono<Long> runReactive(String job, Duration workDuration) {
-        return jobRunLog.start(job, replicaName)
+        return jobRunRepository.start(job, replicaName)
                 .flatMap(runId -> Mono.delay(workDuration)
-                        .then(jobRunLog.finish(runId))
+                        .then(jobRunRepository.finish(runId))
                         .thenReturn(runId));
     }
 }

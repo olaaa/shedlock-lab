@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.github.olaaa.shedlocklab.job.CatalogExportJob;
-import io.github.olaaa.shedlocklab.job.JobRun;
-import io.github.olaaa.shedlocklab.job.LockRow;
+import io.github.olaaa.shedlocklab.model.JobRun;
+import io.github.olaaa.shedlocklab.model.LockRow;
 import net.javacrumbs.shedlock.core.ClockProvider;
 import net.javacrumbs.shedlock.core.LockConfiguration;
 import net.javacrumbs.shedlock.core.SimpleLock;

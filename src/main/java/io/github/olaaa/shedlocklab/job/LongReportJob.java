@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import io.github.olaaa.shedlocklab.config.JobProperties;
 import io.github.olaaa.shedlocklab.config.LockProviderConfiguration;
+import io.github.olaaa.shedlocklab.service.JobExecutionService;
 import net.javacrumbs.shedlock.core.LockAssert;
 import net.javacrumbs.shedlock.spring.annotation.LockProviderToUse;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -22,11 +23,11 @@ public class LongReportJob {
     public static final String LOCK_NAME = "long-report";
     public static final String KEEP_ALIVE_LOCK_NAME = "long-report-keep-alive";
 
-    private final JobRunner jobRunner;
+    private final JobExecutionService jobExecutionService;
     private final JobProperties.LongReport properties;
 
-    public LongReportJob(JobRunner jobRunner, JobProperties.LongReport properties) {
-        this.jobRunner = jobRunner;
+    public LongReportJob(JobExecutionService jobExecutionService, JobProperties.LongReport properties) {
+        this.jobExecutionService = jobExecutionService;
         this.properties = properties;
     }
 
@@ -34,7 +35,7 @@ public class LongReportJob {
     @SchedulerLock(name = LOCK_NAME, lockAtMostFor = "${long-report.lock-at-most-for}")
     public Optional<Long> build() {
         LockAssert.assertLocked();
-        return Optional.of(jobRunner.run(LOCK_NAME, properties.workDuration()));
+        return Optional.of(jobExecutionService.run(LOCK_NAME, properties.workDuration()));
     }
 
     @Scheduled(cron = "${long-report.cron}")
@@ -42,6 +43,6 @@ public class LongReportJob {
     @SchedulerLock(name = KEEP_ALIVE_LOCK_NAME, lockAtMostFor = "${long-report.keep-alive-lock-at-most-for}")
     public Optional<Long> buildWithKeepAlive() {
         LockAssert.assertLocked();
-        return Optional.of(jobRunner.run(KEEP_ALIVE_LOCK_NAME, properties.keepAliveWorkDuration()));
+        return Optional.of(jobExecutionService.run(KEEP_ALIVE_LOCK_NAME, properties.keepAliveWorkDuration()));
     }
 }
