@@ -120,7 +120,7 @@ new SpringApplicationBuilder(ShedlockLabApplication.class)
 
 ## Сценарии
 
-Подробное описание — [docs/scenarios](docs/scenarios/README.md).
+Подробное описание — [docs/scenarios](docs/scenarios/README.md). Все SQL-запросы, которые ShedLock отправляет в таблицу `shedlock` (взять, продлить, снять), — [docs/shedlock-sql.md](docs/shedlock-sql.md).
 
 ### 1. Задачу выполняет одна реплика
 

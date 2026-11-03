@@ -80,7 +80,7 @@ public Optional<Long> export() {
 
 ## Что лежит в таблице
 
-ShedLock пишет в таблицу сам. По исходнику (`PostgresSqlServerTimeStatementsSource`) с `usingDbTime()` запросы такие — время `now` здесь `timezone('utc', CURRENT_TIMESTAMP)`:
+ShedLock пишет в таблицу сам. По исходнику (`PostgresSqlServerTimeStatementsSource`) с `usingDbTime()` запросы такие — в сокращённой записи, `now` здесь `timezone('utc', CURRENT_TIMESTAMP)`; полностью, с параметрами и всеми вариантами — в [docs/shedlock-sql.md](../shedlock-sql.md):
 
 ```sql
 INSERT INTO shedlock (name, lock_until, locked_at, locked_by)
