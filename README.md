@@ -84,6 +84,40 @@ Spring Boot сам поднимет PostgreSQL из `compose.yaml`. Вторая
 - `Scenario1OneReplicaTest`, `Scenario2HolderCrashTest`, `Scenario3TaskLongerThanLockTest` — тесты трёх сценариев.
 - `application-scenario.yml` — короткие сроки для тестов (секунды), расписание выключено.
 
+### Как тест поднимает вторую реплику
+
+`ScenarioTestSupport.startReplica(...)` запускает то же приложение вторым контекстом Spring и передаёт ему свойства аргументами командной строки — теми же `String[] args`, что приходят в `main`:
+
+```java
+new SpringApplicationBuilder(ShedlockLabApplication.class)
+        .web(WebApplicationType.NONE)
+        .profiles("scenario")
+        .run("--lab.replica-name=" + replicaName,
+                "--spring.r2dbc.url=" + r2dbcUrl,
+                "--spring.r2dbc.username=" + postgresContainer.getUsername(),
+                "--spring.r2dbc.password=" + postgresContainer.getPassword(),
+                "--spring.sql.init.mode=never");
+```
+
+Это то же самое, что `java -jar shedlock-lab.jar --lab.replica-name=replica-b ...` в терминале или `-Dspring-boot.run.arguments=--server.port=8081` при ручной проверке: каждый `--ключ=значение` Spring Boot превращает в свойство конфигурации.
+
+| Аргумент | Кто читает | Зачем |
+|---|---|---|
+| `--lab.replica-name` | `LabProperties` | имя реплики: идёт в `locked_by` провайдера и в журнал `job_run` |
+| `--spring.r2dbc.url` | автоконфигурация R2DBC Spring Boot | адрес той же базы, что у реплики A; по нему создаётся `ConnectionFactory` для `DatabaseClient` и `R2dbcLockProvider`. Передаётся явно: `@ServiceConnection` настраивает только тестовый контекст |
+| `--spring.r2dbc.username`, `--spring.r2dbc.password` | она же | логин и пароль, которые сгенерировал контейнер Testcontainers |
+| `--spring.sql.init.mode=never` | инициализация схемы Spring Boot | не выполнять `schema.sql` ещё раз: таблицы уже создал контекст реплики A |
+
+Почему аргументы, а не `SpringApplicationBuilder.properties(...)`. У источников свойств в Spring Boot есть порядок старшинства: если ключ задан в нескольких источниках, берётся значение из самого старшего. Аргументы командной строки старше файлов `application.yml` и `application-<профиль>.yml`, а `properties(...)` задаёт значения по умолчанию — самый младший источник. С `properties(...)` строка `lab.replica-name: replica-${server.port:8080}` из `application.yml` перекрывала переданное имя, и реплика B записывалась как `replica-8080`.
+
+Что значит «перекрывает»:
+
+- перекрывается только этот ключ — остальные свойства из `application.yml` действуют как обычно;
+- файл не меняется — Spring Boot для каждого ключа выбирает значение из старшего источника, в котором ключ есть;
+- профиль подчиняется тому же правилу: `application-scenario.yml` старше `application.yml`, но младше аргументов. У реплики B сроки блокировок — из профиля, имя и адрес базы — из аргументов.
+
+Источник: [Spring Boot — Externalized Configuration](https://docs.spring.io/spring-boot/reference/features/external-config.html).
+
 ## Сценарии
 
 Подробное описание — [docs/scenarios](docs/scenarios/README.md).
