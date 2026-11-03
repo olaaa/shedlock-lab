@@ -62,6 +62,32 @@ abstract class ScenarioTestSupport {
         startedReplicas.forEach(ConfigurableApplicationContext::close);
     }
 
+    /**
+     * Поднимает вторую реплику сервиса — отдельный контекст Spring того же приложения в этой же JVM.
+     * <p>
+     * Тестовый контекст — реплика A. Реплика B получает свои бины: задачи со своим прокси ShedLock и свой
+     * {@code R2dbcLockProvider} с {@code locked_by = replicaName}, — но работает с той же базой, что и A.
+     * Поэтому обе соревнуются за одни и те же строки таблицы {@code shedlock}.
+     * <ul>
+     *     <li>Подключение к контейнеру PostgreSQL передаётся явно: {@code @ServiceConnection} настраивает только
+     *     тестовый контекст.</li>
+     *     <li>HTTP-сервер не поднимается ({@link WebApplicationType#NONE}): тестам нужны только бины задач.</li>
+     *     <li>Профиль {@code scenario} — те же короткие сроки и выключенное расписание, что у реплики A.</li>
+     *     <li>{@code schema.sql} не выполняется: таблицы уже создал контекст реплики A.</li>
+     *     <li>Свойства передаются аргументами командной строки, а не через
+     *     {@link SpringApplicationBuilder#properties(String...)}: те становятся значениями по умолчанию,
+     *     и {@code lab.replica-name} из {@code application.yml} их перекрыл бы.</li>
+     * </ul>
+     * Контекст закрывается после теста в {@link #stopReplicas()}.
+     * <p>
+     * Пример: {@code startReplica("replica-b").getBean(CatalogExportJob.class)} — задача реплики B; её вызов
+     * берёт блокировку от имени {@code replica-b}. Одинаковое с репликой A имя имитирует два процесса на одном
+     * хосте с {@code locked_by} по умолчанию.
+     *
+     * @param replicaName имя реплики: значение {@code lab.replica-name}, попадает в {@code locked_by} и в журнал
+     *                    запусков {@code job_run}
+     * @return запущенный контекст реплики; бины задач берут из него через {@code getBean}
+     */
     ConfigurableApplicationContext startReplica(String replicaName) {
         String r2dbcUrl = "r2dbc:postgresql://%s:%d/%s".formatted(postgresContainer.getHost(),
                 postgresContainer.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT),
